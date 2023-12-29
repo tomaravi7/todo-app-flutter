@@ -15,7 +15,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: const ColorScheme.dark(
             primary: Colors.black,
-            secondary: Color.fromARGB(255, 213, 244, 102),
+            secondary: Colors.white,
             tertiary: Colors.red),
       ),
       home: const HomePage(title: 'HOME'),
@@ -69,7 +69,7 @@ class _HomePageState extends State<HomePage> {
                   TextField(
                     decoration: const InputDecoration(
                       border: OutlineInputBorder(),
-                      labelText: "Description",
+                      labelText: "Note",
                     ),
                     onChanged: (value) => newDesc = value,
                   ),
@@ -77,7 +77,7 @@ class _HomePageState extends State<HomePage> {
               ),
               actions: [
                 TextButton(
-                    style: TextButton.styleFrom(primary: Colors.red),
+                    style: TextButton.styleFrom(foregroundColor: Colors.red),
                     onPressed: () {
                       setState(() {
                         Navigator.pop(context);
@@ -85,7 +85,7 @@ class _HomePageState extends State<HomePage> {
                     },
                     child: const Text("Cancel")),
                 TextButton(
-                    style: TextButton.styleFrom(primary: Colors.green),
+                    style: TextButton.styleFrom(foregroundColor: Colors.green),
                     onPressed: () {
                       setState(() {
                         todoList.add(Todo(
@@ -148,17 +148,30 @@ class _HomePageState extends State<HomePage> {
                   return ListTile(
                     title: Text(
                       todoList[index].title,
-                      style: const TextStyle(
+                      style: TextStyle(
+                          decoration: todoList[index].isDone ? TextDecoration.lineThrough: TextDecoration.none,
+                          decorationColor: Colors.redAccent,
+                          decorationThickness: 3,
+
                           fontSize: 30, fontWeight: FontWeight.bold),
                     ),
                     subtitle: todoList[index].description != null
-                        ? Text(todoList[index].description!)
+                        ? Text(todoList[index].description!,
+                          style: TextStyle(
+                              decoration: todoList[index].isDone ? TextDecoration.lineThrough: TextDecoration.none,
+                              decorationColor: Colors.redAccent,
+                              decorationThickness: 3,
+
+                              fontWeight: FontWeight.bold),
+                    )
                         : null,
+
                     trailing: Checkbox(
                       value: todoList[index].isDone,
                       onChanged: (bool? value) {
                         updateTodo(index, value);
                       },
+                      activeColor: Colors.white,
                     ),
                     onLongPress: () => deleteTodo(index),
                   );
@@ -167,11 +180,12 @@ class _HomePageState extends State<HomePage> {
         ),
         floatingActionButton: FloatingActionButton(
           onPressed: addList,
-          child: const Icon(Icons.add),
+
           foregroundColor: Colors.red,
           shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(15),
               side: const BorderSide(width: 2)),
+            child: const Icon(Icons.add)
         ));
   }
 }
