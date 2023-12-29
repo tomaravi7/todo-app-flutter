@@ -125,7 +125,7 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
         appBar: AppBar(
           title: const Text(
-            "TODO",
+            "TASKS",
           ),
           leading: IconButton(
             onPressed: () {},
@@ -149,23 +149,26 @@ class _HomePageState extends State<HomePage> {
                     title: Text(
                       todoList[index].title,
                       style: TextStyle(
-                          decoration: todoList[index].isDone ? TextDecoration.lineThrough: TextDecoration.none,
+                          decoration: todoList[index].isDone
+                              ? TextDecoration.lineThrough
+                              : TextDecoration.none,
                           decorationColor: Colors.redAccent,
                           decorationThickness: 3,
-
-                          fontSize: 30, fontWeight: FontWeight.bold),
+                          fontSize: 30,
+                          fontWeight: FontWeight.bold),
                     ),
                     subtitle: todoList[index].description != null
-                        ? Text(todoList[index].description!,
-                          style: TextStyle(
-                              decoration: todoList[index].isDone ? TextDecoration.lineThrough: TextDecoration.none,
-                              decorationColor: Colors.redAccent,
-                              decorationThickness: 3,
-
-                              fontWeight: FontWeight.bold),
-                    )
+                        ? Text(
+                            todoList[index].description!,
+                            style: TextStyle(
+                                decoration: todoList[index].isDone
+                                    ? TextDecoration.lineThrough
+                                    : TextDecoration.none,
+                                decorationColor: Colors.redAccent,
+                                decorationThickness: 3,
+                                fontWeight: FontWeight.bold),
+                          )
                         : null,
-
                     trailing: Checkbox(
                       value: todoList[index].isDone,
                       onChanged: (bool? value) {
@@ -179,13 +182,11 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
         floatingActionButton: FloatingActionButton(
-          onPressed: addList,
-
-          foregroundColor: Colors.red,
-          shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(15),
-              side: const BorderSide(width: 2)),
-            child: const Icon(Icons.add)
-        ));
+            onPressed: addList,
+            foregroundColor: Colors.red,
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15),
+                side: const BorderSide(width: 2)),
+            child: const Icon(Icons.add)));
   }
 }
