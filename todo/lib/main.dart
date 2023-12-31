@@ -11,7 +11,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'TODO',
+      title: 'TODO List',
       theme: ThemeData(
         colorScheme: const ColorScheme.dark(
             primary: Colors.black,
@@ -46,52 +46,77 @@ class _HomePageState extends State<HomePage> {
   final List<Todo> todoList = [];
   String newTitle = "";
   String newDesc = "";
+  bool showDone = false;
   void addList() {
     setState(() {
       showCupertinoDialog(
           context: context,
           builder: (context) {
             return AlertDialog(
-              title: const Text("Add Todo"),
+              contentPadding: const EdgeInsets.all(20),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15),
+                side: const BorderSide(color: Colors.white, width: 2),
+              ),
+              title: const Text("Add Task"),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   TextField(
                     decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                      labelText: "Title",
-                    ),
+                        border: OutlineInputBorder(),
+                        labelText: "Title",
+                        focusColor: Colors.white,
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.white),
+                        ),
+                        labelStyle: TextStyle(color: Colors.white)),
                     onChanged: (value) => newTitle = value,
+                    cursorColor: Colors.white, // Set the cursor color
                   ),
                   const SizedBox(
                     height: 10,
                   ),
                   TextField(
                     decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                      labelText: "Note",
-                    ),
+                        border: OutlineInputBorder(),
+                        labelText: "Note",
+                        focusColor: Colors.white,
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.white),
+                        ),
+                        labelStyle: TextStyle(color: Colors.white)),
                     onChanged: (value) => newDesc = value,
+                    cursorColor: Colors.white,
                   ),
                 ],
               ),
               actions: [
                 TextButton(
-                    style: TextButton.styleFrom(foregroundColor: Colors.red),
+                    style: TextButton.styleFrom(
+                        foregroundColor: Colors.red,
+                        backgroundColor: Colors.red[50]),
                     onPressed: () {
                       setState(() {
+                        newTitle = "";
+                        newDesc = "";
                         Navigator.pop(context);
                       });
                     },
                     child: const Text("Cancel")),
                 TextButton(
-                    style: TextButton.styleFrom(foregroundColor: Colors.green),
+                    style: TextButton.styleFrom(
+                        foregroundColor: Colors.green,
+                        backgroundColor: Colors.green[50]),
                     onPressed: () {
                       setState(() {
                         todoList.add(Todo(
                             title: newTitle,
                             description: newDesc,
                             isDone: false));
+                        newTitle = "";
+                        newDesc = "";
+
                         Navigator.pop(context);
                       });
                     },
@@ -124,18 +149,52 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
-          title: const Text(
-            "TASKS",
-          ),
+          backgroundColor: Colors.black,
+          bottomOpacity: 20,
+          title: ShaderMask(
+              blendMode: BlendMode.srcIn,
+              shaderCallback: (rect) => const RadialGradient(
+                    center: Alignment.bottomCenter,
+                    radius: 1.85,
+                    colors: <Color>[
+                      Color(0xFF3ecfb2),
+                      Color.fromARGB(255, 0, 255, 204)
+                    ],
+                  ).createShader(rect),
+              child: Title(
+                color: Colors.white,
+                child: const Text('TASKS'),
+              )),
           leading: IconButton(
             onPressed: () {},
-            icon: const Icon(Icons.menu),
+            icon: const Icon(
+              Icons.menu,
+              color: Color(0xFF3ecfb2),
+            ),
           ),
           actions: [
             IconButton(
               onPressed: () {},
-              icon: const Icon(Icons.search),
+              icon: const Icon(
+                Icons.filter_alt_rounded,
+                color: Color(0xFF3ecfb2),
+              ),
             ),
+            if (todoList.where((element) => element.isDone).isNotEmpty)
+              TextButton(
+                onPressed: () {
+                  setState(() {
+                    showDone = !showDone;
+                  });
+                },
+                child: showDone
+                    ? const Icon(Icons.visibility_off_outlined,
+                        color: Color(0xFF3ecfb2))
+                    : const Icon(
+                        Icons.visibility_outlined,
+                        color: Color(0xFF3ecfb2),
+                      ),
+              )
           ],
         ),
         body: Align(
@@ -145,6 +204,7 @@ class _HomePageState extends State<HomePage> {
             child: ListView.builder(
                 itemCount: todoList.length,
                 itemBuilder: (context, index) {
+                  if (todoList[index].isDone && !showDone) return Container();
                   return ListTile(
                     title: Text(
                       todoList[index].title,
@@ -152,8 +212,9 @@ class _HomePageState extends State<HomePage> {
                           decoration: todoList[index].isDone
                               ? TextDecoration.lineThrough
                               : TextDecoration.none,
-                          decorationColor: Colors.redAccent,
-                          decorationThickness: 3,
+                          decorationColor: const Color(0xFF3ecfb2),
+                          decorationThickness: 5,
+                          decorationStyle: TextDecorationStyle.wavy,
                           fontSize: 30,
                           fontWeight: FontWeight.bold),
                     ),
@@ -164,8 +225,8 @@ class _HomePageState extends State<HomePage> {
                                 decoration: todoList[index].isDone
                                     ? TextDecoration.lineThrough
                                     : TextDecoration.none,
-                                decorationColor: Colors.redAccent,
-                                decorationThickness: 3,
+                                decorationColor: const Color(0xFF3ecfb2),
+                                decorationThickness: 5,
                                 fontWeight: FontWeight.bold),
                           )
                         : null,
@@ -173,8 +234,13 @@ class _HomePageState extends State<HomePage> {
                       value: todoList[index].isDone,
                       onChanged: (bool? value) {
                         updateTodo(index, value);
+                        todoList.sort((a, b) {
+                          if (a.isDone && !b.isDone) return 1;
+                          if (!a.isDone && b.isDone) return -1;
+                          return 0;
+                        });
                       },
-                      activeColor: Colors.white,
+                      activeColor: const Color(0xFF3ecfb2),
                     ),
                     onLongPress: () => deleteTodo(index),
                   );
@@ -182,11 +248,19 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
         floatingActionButton: FloatingActionButton(
-            onPressed: addList,
-            foregroundColor: Colors.red,
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(15),
-                side: const BorderSide(width: 2)),
-            child: const Icon(Icons.add)));
+          onPressed: addList,
+          backgroundColor: Colors.black,
+          child: ShaderMask(
+              blendMode: BlendMode.srcIn,
+              shaderCallback: (rect) => const RadialGradient(
+                    center: Alignment.bottomLeft,
+                    radius: 3.0,
+                    colors: <Color>[Color(0xFF3ecfb2), Colors.green],
+                  ).createShader(rect),
+              child: const Icon(
+                Icons.add,
+                size: 35,
+              )),
+        ));
   }
 }
