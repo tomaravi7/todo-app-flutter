@@ -1,5 +1,9 @@
+// ignore_for_file: public_member_api_docs, sort_constructors_first
+import 'dart:convert';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   runApp(const MyApp());
@@ -32,6 +36,28 @@ class Todo {
     this.description,
     this.isDone = false,
   });
+
+  Map<String, dynamic> toMap() {
+    return <String, dynamic>{
+      'title': title,
+      'description': description,
+      'isDone': isDone,
+    };
+  }
+
+  factory Todo.fromMap(Map<String, dynamic> map) {
+    return Todo(
+      title: map['title'] as String,
+      description:
+          map['description'] != null ? map['description'] as String : null,
+      isDone: map['isDone'] as bool,
+    );
+  }
+
+  String toJson() => json.encode(toMap());
+
+  factory Todo.fromJson(String source) =>
+      Todo.fromMap(json.decode(source) as Map<String, dynamic>);
 }
 
 class HomePage extends StatefulWidget {
@@ -44,6 +70,29 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final List<Todo> todoList = [];
+  late SharedPreferences prefs;
+  @override
+  void initState() {
+    super.initState();
+    retrieveTodos();
+  }
+
+  retrieveTodos() async {
+    prefs = await SharedPreferences.getInstance();
+    final String? storedTodoList = prefs.getString('todoList');
+    if (storedTodoList != null) {
+      setState(() {
+        todoList.addAll((jsonDecode(storedTodoList) as List)
+            .map((todo) => Todo.fromJson(todo))
+            .toList());
+      });
+    }
+  }
+
+  saveTodos() async {
+    await prefs.setString('todoList', jsonEncode(todoList));
+  }
+
   String newTitle = "";
   String newDesc = "";
   bool showDone = false;
@@ -116,7 +165,7 @@ class _HomePageState extends State<HomePage> {
                             isDone: false));
                         newTitle = "";
                         newDesc = "";
-
+                        saveTodos();
                         Navigator.pop(context);
                       });
                     },
@@ -136,12 +185,14 @@ class _HomePageState extends State<HomePage> {
   void updateTodo(int index, bool? value) {
     setState(() {
       todoList[index].isDone = value!;
+      saveTodos();
     });
   }
 
   void deleteTodo(int index) {
     setState(() {
       todoList.removeAt(index);
+      saveTodos();
     });
   }
 
