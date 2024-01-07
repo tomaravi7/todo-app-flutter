@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/cupertino.dart';
 import 'dart:convert';
+import 'package:todo/main.dart';
 
 class Todo {
   final String title;
@@ -45,12 +47,117 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  final _usernameController = TextEditingController();
+  final _websiteController = TextEditingController();
+
+  var _loading = true;
+  Future<void> _getProfile() async {
+    setState(() {
+      _loading = true;
+    });
+
+    try {
+      final userId = supabase.auth.currentUser!.id;
+      final data = await supabase
+          .from('profiles')
+          .select('username, website')
+          .eq('id', userId)
+          .single();
+      _usernameController.text = (data['username'] ?? '') as String;
+      _websiteController.text = (data['website'] ?? '') as String;
+    } on PostgrestException catch (error) {
+      SnackBar(
+        content: Text(error.message),
+        backgroundColor: Theme.of(context).colorScheme.error,
+      );
+    } catch (error) {
+      SnackBar(
+        content: const Text('Unexpected error occurred'),
+        backgroundColor: Theme.of(context).colorScheme.error,
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _loading = false;
+        });
+      }
+    }
+  }
+
+  /// Called when user taps `Update` button
+  Future<void> _updateProfile() async {
+    setState(() {
+      _loading = true;
+    });
+    final userName = _usernameController.text.trim();
+    final website = _websiteController.text.trim();
+    final user = supabase.auth.currentUser;
+    final updates = {
+      'id': user!.id,
+      'username': userName,
+      'website': website,
+      'updated_at': DateTime.now().toIso8601String(),
+    };
+    try {
+      await supabase.from('profiles').upsert(updates);
+      if (mounted) {
+        const SnackBar(
+          content: Text('Successfully updated profile!'),
+        );
+      }
+    } on PostgrestException catch (error) {
+      SnackBar(
+        content: Text(error.message),
+        backgroundColor: Theme.of(context).colorScheme.error,
+      );
+    } catch (error) {
+      SnackBar(
+        content: const Text('Unexpected error occurred'),
+        backgroundColor: Theme.of(context).colorScheme.error,
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _loading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _signOut() async {
+    try {
+      await supabase.auth.signOut();
+    } on AuthException catch (error) {
+      SnackBar(
+        content: Text(error.message),
+        backgroundColor: Theme.of(context).colorScheme.error,
+      );
+    } catch (error) {
+      SnackBar(
+        content: const Text('Unexpected error occurred'),
+        backgroundColor: Theme.of(context).colorScheme.error,
+      );
+    } finally {
+      if (mounted) {
+        Navigator.of(context).pushReplacementNamed('/login');
+      }
+    }
+  }
+
   final List<Todo> todoList = [];
   late SharedPreferences prefs;
   @override
   void initState() {
     super.initState();
+    _getProfile();
     retrieveTodos();
+  }
+
+  @override
+  void dispose() {
+    _usernameController.dispose();
+    _websiteController.dispose();
+    super.dispose();
   }
 
   retrieveTodos() async {
@@ -194,7 +301,7 @@ class _HomePageState extends State<HomePage> {
                       ).createShader(rect),
                   child: Title(
                     color: Colors.white,
-                    child: const Text('TASKS'),
+                    child: Text(_usernameController.text),
                   ))),
           actions: [
             IconButton(

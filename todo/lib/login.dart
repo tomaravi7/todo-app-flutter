@@ -1,72 +1,90 @@
+import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import './tasks.dart';
+import './main.dart';
 
 class LoginPage extends StatefulWidget {
-  LoginPage({super.key});
+  const LoginPage({super.key});
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  _LoginPageState createState() => _LoginPageState();
 }
 
-final supabase = Supabase.instance.client;
-
 class _LoginPageState extends State<LoginPage> {
-  String emailvalue = "";
+  bool _isLoading = false;
+  bool _redirecting = false;
+  late final TextEditingController _emailController = TextEditingController();
+  late final StreamSubscription<AuthState> _authStateSubscription;
+
+  Future<void> _signIn() async {
+    try {
+      setState(() {
+        _isLoading = true;
+      });
+      await supabase.auth.signInWithOtp(
+        email: _emailController.text.trim(),
+        emailRedirectTo:
+            kIsWeb ? null : 'io.supabase.flutterquickstart://login-callback/',
+      );
+    } on AuthException catch (error) {
+      SnackBar(
+        content: Text(error.message),
+        backgroundColor: Theme.of(context).colorScheme.error,
+      );
+    } catch (error) {
+      SnackBar(
+        content: const Text('Unexpected error occurred'),
+        backgroundColor: Theme.of(context).colorScheme.error,
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  @override
+  void initState() {
+    _authStateSubscription = supabase.auth.onAuthStateChange.listen((data) {
+      if (_redirecting) return;
+      final session = data.session;
+      if (session != null) {
+        _redirecting = true;
+        Navigator.of(context).pushReplacementNamed('/home');
+      }
+    });
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _authStateSubscription.cancel();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          title: const Text('Login'),
-        ),
-        body: Column(children: [
-          const SizedBox(
-            height: 20,
+      appBar: AppBar(title: const Text('Sign In')),
+      body: ListView(
+        padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 12),
+        children: [
+          const Text('Sign in via the magic link with your email below'),
+          const SizedBox(height: 18),
+          TextFormField(
+            controller: _emailController,
+            decoration: const InputDecoration(labelText: 'Email'),
           ),
-          TextField(
-            decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                labelText: "Email",
-                hintText: "Enter Email Address",
-                focusColor: Colors.white,
-                focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.white),
-                ),
-                labelStyle: TextStyle(color: Colors.white)),
-            onChanged: (value) => emailvalue = value,
-            cursorColor: Colors.white, // Set the cursor color
+          const SizedBox(height: 18),
+          ElevatedButton(
+            onPressed: _isLoading ? null : _signIn,
+            child: Text(_isLoading ? 'Loading' : 'Send Magic Link'),
           ),
-          const SizedBox(
-            height: 20,
-          ),
-          TextField(
-            decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                labelText: "Password",
-                hintText: "Enter Your Password",
-                focusColor: Colors.white,
-                focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.white),
-                ),
-                labelStyle: TextStyle(color: Colors.white)),
-            onChanged: (value) => emailvalue = value,
-            cursorColor: Colors.white, // Set the cursor color
-          ),
-          const SizedBox(
-            height: 20,
-          ),
-          TextButton(
-            child: const Center(child: Text('GET OTP')),
-            onPressed: () async {
-              await supabase.auth.signInWithOtp(email: emailvalue);
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => const HomePage(
-                          title: 'Home',
-                        )),
-              );
-            },
-          )
-        ]));
+        ],
+      ),
+    );
   }
 }
